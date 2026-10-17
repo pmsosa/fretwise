@@ -11,11 +11,13 @@ then pick the capo fret (0–7).
 - Capo 6 → Bb Eb Ab Db F Bb
 - Other base tunings: Drop D, Half step down, DADGAD, Open G
 - Auto-detects the string, or tap a string to lock onto it
+- Chords tab: a chord wheel. Pick a start chord, tap where it could go next, and each tap plays the chord and shows the guitar fingering
+- Every build is signed with the same key (`signing/`, not in git, backed up nightly) so a new APK installs over the old one
 - Your tuning and capo are remembered
 
 ## Build
 
     docker run --rm -v "$PWD:/workspace" -w /workspace -v android-gradle:/root/.gradle \
-      android-build:35 ./gradlew assembleDebug
+      android-build:35 ./gradlew assembleRelease
 
-The APK lands in `app/build/outputs/apk/debug/app-debug.apk`. Pitch detection is YIN (`PitchEngine.java`).
+The APK lands in `app/build/outputs/apk/release/app-release.apk`. Pitch detection is YIN (`PitchEngine.java`).

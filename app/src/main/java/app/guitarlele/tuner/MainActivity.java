@@ -5,33 +5,39 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.Typeface;
+import android.graphics.Insets;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.HorizontalScrollView;
+import android.view.WindowInsets;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity implements PitchEngine.Listener {
     private static final int REQ_MIC = 1;
     private static final long IDLE_AFTER_MS = 700;
 
     private SharedPreferences prefs;
-    private float dp;
-    private int tuningIndex, capo;
+    private UiKit ui;
+    private int tuningIndex, capo, tab;
     private int[] strings;
     private int locked = -1;
 
     private PitchEngine engine;
+    private ToneSynth synth;
     private TunerView tunerView;
     private StringsView stringsView;
+    private ChordsPanel chordsPanel;
+    private LinearLayout tunerPage;
     private TextView tuningChip, notesLine, lockHint;
-    private final TextView[] capoChips = new TextView[8];
+    private final TextView[] tabChips = new TextView[2];
+    private final List<TextView[]> capoRows = new ArrayList<>();
 
     private long lastVoiced;
     private int lastTarget = -1;
@@ -40,60 +46,77 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
-        dp = getResources().getDisplayMetrics().density;
+        ui = new UiKit(this);
         prefs = getSharedPreferences("tuner", MODE_PRIVATE);
         tuningIndex = Math.min(prefs.getInt("tuning", 0), Tuning.PRESETS.length - 1);
         capo = prefs.getInt("capo", 3); // guitar with capo 3 = the user's guitarlele
+        tab = prefs.getInt("tab", 0);
 
+        engine = new PitchEngine(this);
+        synth = new ToneSynth();
         buildUi();
         applyTuning();
-        engine = new PitchEngine(this);
+        showTab(tab);
     }
 
     private void buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{getColor(R.color.bg_top), getColor(R.color.bg_bottom)});
-        root.setBackground(bg);
-        root.setPadding(px(20), px(36), px(20), px(20));
+        root.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{getColor(R.color.bg_top), getColor(R.color.bg_bottom)}));
+        // targetSdk 35 draws edge to edge, so keep clear of the status bar, cutout and gesture bar
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            Insets i = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+            v.setPadding(i.left + ui.px(20), i.top + ui.px(12), i.right + ui.px(20), i.bottom + ui.px(12));
+            return WindowInsets.CONSUMED;
+        });
 
-        TextView title = text("Guitarlele Tuner", 26, Palette.TEXT, true);
+        TextView title = ui.text("Guitarlele", 26, Palette.TEXT, true);
         title.setGravity(Gravity.CENTER);
-        root.addView(title, lp(-1, -2, 0));
+        root.addView(title, ui.lp(-1, -2, 0));
 
-        notesLine = text("", 15, Palette.AMBER, false);
+        LinearLayout tabs = new LinearLayout(this);
+        String[] names = {"Tuner", "Chords"};
+        for (int i = 0; i < 2; i++) {
+            final int t = i;
+            tabChips[i] = ui.chip(names[i], false);
+            tabChips[i].setOnClickListener(v -> showTab(t));
+            LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(0, ui.px(42), 1);
+            l.setMargins(ui.px(4), 0, ui.px(4), 0);
+            tabs.addView(tabChips[i], l);
+        }
+        root.addView(tabs, ui.lp(-1, -2, 0, 12, 0));
+
+        FrameLayout content = new FrameLayout(this);
+        tunerPage = buildTunerPage();
+        chordsPanel = new ChordsPanel(this, ui, synth, capoRow(), capo);
+        content.addView(tunerPage, new FrameLayout.LayoutParams(-1, -1));
+        content.addView(chordsPanel, new FrameLayout.LayoutParams(-1, -1));
+        root.addView(content, ui.lp(-1, 0, 1, 4, 0));
+
+        setContentView(root);
+    }
+
+    private LinearLayout buildTunerPage() {
+        LinearLayout page = new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+
+        notesLine = ui.text("", 15, Palette.AMBER, false);
         notesLine.setGravity(Gravity.CENTER);
         notesLine.setLetterSpacing(0.12f);
-        root.addView(notesLine, lp(-1, -2, 0, 4, 0));
+        page.addView(notesLine, ui.lp(-1, -2, 0, 8, 0));
 
-        // tuning picker
-        tuningChip = chip("", true);
+        tuningChip = ui.chip("", false);
+        tuningChip.setPadding(ui.px(22), ui.px(10), ui.px(22), ui.px(10));
         tuningChip.setOnClickListener(v -> pickTuning());
-        LinearLayout.LayoutParams chipLp = lp(-2, -2, 0, 18, 0);
+        LinearLayout.LayoutParams chipLp = ui.lp(-2, -2, 0, 14, 0);
         chipLp.gravity = Gravity.CENTER_HORIZONTAL;
-        root.addView(tuningChip, chipLp);
+        page.addView(tuningChip, chipLp);
 
-        // capo chips
-        TextView capoLabel = text("CAPO", 12, Palette.DIM, true);
-        capoLabel.setLetterSpacing(0.2f);
-        capoLabel.setGravity(Gravity.CENTER);
-        root.addView(capoLabel, lp(-1, -2, 0, 14, 0));
-        LinearLayout capoRow = new LinearLayout(this);
-        capoRow.setGravity(Gravity.CENTER);
-        for (int i = 0; i < capoChips.length; i++) {
-            final int c = i;
-            TextView t = chip(String.valueOf(i), false);
-            t.setOnClickListener(v -> { capo = c; applyTuning(); });
-            LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(0, px(40), 1);
-            l.setMargins(px(3), 0, px(3), 0);
-            capoRow.addView(t, l);
-            capoChips[i] = t;
-        }
-        root.addView(capoRow, lp(-1, -2, 0, 6, 0));
+        page.addView(capoRow(), ui.lp(-1, -2, 0, 4, 0));
 
         tunerView = new TunerView(this);
-        root.addView(tunerView, lp(-1, 0, 1, 8, 0));
+        page.addView(tunerView, ui.lp(-1, 0, 1, 8, 0));
 
         stringsView = new StringsView(this);
         stringsView.setListener(i -> {
@@ -102,14 +125,50 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
             lastTarget = -1;
             updateLockHint();
         });
-        root.addView(stringsView, lp(-1, 92, 0));
+        page.addView(stringsView, ui.lp(-1, 92, 0));
 
-        lockHint = text("", 13, Palette.DIM, false);
+        lockHint = ui.text("", 13, Palette.DIM, false);
         lockHint.setGravity(Gravity.CENTER);
-        root.addView(lockHint, lp(-1, -2, 0, 4, 0));
-        updateLockHint();
+        page.addView(lockHint, ui.lp(-1, -2, 0, 4, 0));
+        return page;
+    }
 
-        setContentView(root);
+    /** "CAPO 0 1 2 …" chips. Each screen has its own row; they all follow the same capo. */
+    private View capoRow() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        TextView label = ui.text("CAPO", 12, Palette.DIM, true);
+        label.setLetterSpacing(0.2f);
+        label.setGravity(Gravity.CENTER);
+        box.addView(label, ui.lp(-1, -2, 0, 10, 0));
+        LinearLayout row = new LinearLayout(this);
+        row.setGravity(Gravity.CENTER);
+        TextView[] chips = new TextView[8];
+        for (int i = 0; i < chips.length; i++) {
+            final int c = i;
+            chips[i] = ui.chip(String.valueOf(i), false);
+            chips[i].setOnClickListener(v -> { capo = c; applyTuning(); });
+            LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(0, ui.px(40), 1);
+            l.setMargins(ui.px(3), 0, ui.px(3), 0);
+            row.addView(chips[i], l);
+        }
+        box.addView(row, ui.lp(-1, -2, 0, 6, 0));
+        capoRows.add(chips);
+        return box;
+    }
+
+    private void showTab(int t) {
+        tab = t;
+        prefs.edit().putInt("tab", t).apply();
+        tunerPage.setVisibility(t == 0 ? View.VISIBLE : View.GONE);
+        chordsPanel.setVisibility(t == 1 ? View.VISIBLE : View.GONE);
+        for (int i = 0; i < tabChips.length; i++) ui.styleChip(tabChips[i], i == t);
+        if (t == 0) {
+            chordsPanel.stopSound();
+            startMic();
+        } else {
+            engine.stop();
+        }
     }
 
     private void applyTuning() {
@@ -123,9 +182,11 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
         for (int m : strings) sb.append(sb.length() > 0 ? "  " : "").append(Tuning.noteName(m));
         notesLine.setText(sb);
         tuningChip.setText(t.name + "  ▾");
-        for (int i = 0; i < capoChips.length; i++) styleChip(capoChips[i], i == capo);
+        for (TextView[] chips : capoRows)
+            for (int i = 0; i < chips.length; i++) ui.styleChip(chips[i], i == capo);
         stringsView.setStrings(strings);
         tunerView.setIdle();
+        chordsPanel.setCapo(capo);
         updateLockHint();
     }
 
@@ -193,8 +254,7 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
 
     // --- mic lifecycle --------------------------------------------------------------------
 
-    @Override protected void onResume() {
-        super.onResume();
+    private void startMic() {
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             engine.start();
         } else {
@@ -202,57 +262,23 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
         }
     }
 
+    @Override protected void onResume() {
+        super.onResume();
+        if (tab == 0) startMic();
+    }
+
     @Override protected void onPause() {
         engine.stop();
+        chordsPanel.stopSound();
         super.onPause();
     }
 
     @Override public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
-        if (code == REQ_MIC && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
-            engine.start();
-        } else if (code == REQ_MIC) {
+        if (code != REQ_MIC) return;
+        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
+            if (tab == 0) engine.start();
+        } else {
             lockHint.setText("Microphone permission is needed to hear your guitarlele");
         }
-    }
-
-    // --- view helpers ---------------------------------------------------------------------
-
-    private int px(float v) { return Math.round(v * dp); }
-
-    private LinearLayout.LayoutParams lp(int w, int h, float weight) {
-        return lp(w, h, weight, 0, 0);
-    }
-
-    private LinearLayout.LayoutParams lp(int w, int h, float weight, int top, int bottom) {
-        LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(
-                w > 0 ? px(w) : w, h > 0 ? px(h) : h, weight);
-        l.topMargin = px(top);
-        l.bottomMargin = px(bottom);
-        return l;
-    }
-
-    private TextView text(String s, float sp, int color, boolean bold) {
-        TextView t = new TextView(this);
-        t.setText(s);
-        t.setTextSize(sp);
-        t.setTextColor(color);
-        t.setTypeface(Typeface.create(bold ? "sans-serif-medium" : "sans-serif", Typeface.NORMAL));
-        return t;
-    }
-
-    private TextView chip(String s, boolean wide) {
-        TextView t = text(s, 16, Palette.TEXT, true);
-        t.setGravity(Gravity.CENTER);
-        if (wide) t.setPadding(px(22), px(10), px(22), px(10));
-        styleChip(t, wide);
-        return t;
-    }
-
-    private void styleChip(TextView t, boolean selected) {
-        GradientDrawable g = new GradientDrawable();
-        g.setCornerRadius(px(20));
-        g.setColor(selected ? Palette.AMBER : Palette.CARD);
-        t.setBackground(g);
-        t.setTextColor(selected ? 0xFF1B1038 : Palette.TEXT);
     }
 }
