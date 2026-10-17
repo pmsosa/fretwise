@@ -6,6 +6,13 @@ has a chord wheel that suggests where to go next, plays each chord and shows how
 A guitarlele is a guitar tuned up with a capo, so the whole app works that way: pick a guitar tuning,
 then pick the capo fret (0–7). Capo 3 is the default; the common "classic" guitarlele tuning is capo 5.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/tuner.png" width="260" alt="Tuner">
+  <img src="docs/screenshots/chords-2.png" width="260" alt="Chord wheel">
+</p>
+
 ## Tuner
 
 - Listens through the mic, finds which string you played and shows how many cents sharp or flat it is
