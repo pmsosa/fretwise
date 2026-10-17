@@ -64,6 +64,7 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[]{getColor(R.color.bg_top), getColor(R.color.bg_bottom)}));
+        root.setPadding(ui.px(20), ui.px(12), ui.px(20), ui.px(12)); // before any insets arrive
         // targetSdk 35 draws edge to edge, so keep clear of the status bar, cutout and gesture bar
         root.setOnApplyWindowInsetsListener((v, insets) -> {
             Insets i = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
