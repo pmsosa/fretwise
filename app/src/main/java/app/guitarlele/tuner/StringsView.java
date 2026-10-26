@@ -14,6 +14,7 @@ final class StringsView extends View {
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final float dp = getResources().getDisplayMetrics().density;
     private int[] midi = new int[0];
+    private boolean sharps;
     private boolean[] tuned = new boolean[0];
     private int current = -1, locked = -1;
     private Listener listener;
@@ -26,8 +27,9 @@ final class StringsView extends View {
 
     void setListener(Listener l) { listener = l; }
 
-    void setStrings(int[] midi) {
+    void setStrings(int[] midi, boolean sharps) {
         this.midi = midi;
+        this.sharps = sharps;
         tuned = new boolean[midi.length];
         current = locked = -1;
         invalidate();
@@ -58,7 +60,7 @@ final class StringsView extends View {
             p.setStyle(Paint.Style.FILL);
             p.setColor(on ? 0xFF1B1038 : Palette.TEXT);
             p.setTextSize(r * 0.78f);
-            cv.drawText(Tuning.noteName(midi[i]), cx, cy + r * 0.27f, p);
+            cv.drawText(Tuning.noteName(midi[i], sharps), cx, cy + r * 0.27f, p);
             p.setTextSize(11 * dp);
             p.setColor(Palette.DIM);
             cv.drawText(String.valueOf(n - i), cx, cy + r + 18 * dp, p);

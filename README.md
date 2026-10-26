@@ -3,23 +3,19 @@
 An Android app for guitarlele players. It tunes your instrument by ear through the microphone, and it
 has a chord wheel that suggests where to go next, plays each chord and shows how to finger it.
 
-A guitarlele is a guitar tuned up with a capo, so the whole app works that way: pick a guitar tuning,
-then pick the capo fret (0–7). Capo 3 is the default; the common "classic" guitarlele tuning is capo 5.
-
-## Screenshots
-
-<p align="center">
-  <img src="docs/screenshots/tuner.png" width="260" alt="Tuner">
-  <img src="docs/screenshots/chords-2.png" width="260" alt="Chord wheel">
-</p>
+A guitarlele is a guitar tuned up with a capo, so the tuner works that way: pick a guitar tuning, then
+pick the capo fret (0–7). Capo 3 is the default; the common "classic" guitarlele tuning is capo 5.
+It also tunes a ukulele and a Venezuelan cuatro.
 
 ## Tuner
 
 - Listens through the mic, finds which string you played and shows how many cents sharp or flat it is
 - A gauge with a smooth needle that glows green when you're in tune (within 5 cents)
 - Auto-detects the string, or tap a string to lock onto it
-- Base tunings: Standard, Drop D, Half step down, DADGAD, Open G
-- Capo 0–7 on top of any of them
+- Instruments: Guitarlele, Ukulele, Cuatro venezolano. Each remembers its own tuning and capo
+- Guitarlele: base tunings Standard, Drop D, Half step down, DADGAD, Open G, plus a capo (0–7)
+- Ukulele: Standard GCEA, Low G, Baritone DGBE, D tuning (ADF#B)
+- Cuatro venezolano: A D F# B, re-entrant (B3 F#4 D4 A4 from the lowest string)
 
 | Base tuning + capo | Strings |
 |---|---|
@@ -38,6 +34,41 @@ then pick the capo fret (0–7). Capo 3 is the default; the common "classic" gui
   it sounds as (a G shape at capo 3 sounds as Bb)
 - Major and minor chords only for now
 
+## See it
+
+Real screenshots from the app running on a phone.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/images/guitarlele-tuner-guitarlele.png" alt="Tuner tab set to guitarlele, standard tuning with capo 3" width="100%"><br>
+<sub>Tuner</sub>
+<h3>Tune it with a capo</h3>
+Pick a guitar tuning and a capo fret. Capo 3 gives G C F Bb D G.
+</td>
+<td width="50%" valign="top">
+<img src="docs/images/guitarlele-chords.png" alt="Chord wheel centred on Bm with the path G, D, Bm and the fingering below" width="100%"><br>
+<sub>Chords</sub>
+<h3>Follow the wheel</h3>
+Tap where a chord could go next. It plays the chord and shows how to finger it.
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/images/guitarlele-tuner-ukulele.png" alt="Tuner tab set to ukulele, standard GCEA" width="100%"><br>
+<sub>Ukulele</sub>
+<h3>Other instruments too</h3>
+Standard, low G, baritone and D tunings for the ukulele.
+</td>
+<td width="50%" valign="top">
+<img src="docs/images/guitarlele-tuner-cuatro.png" alt="Tuner tab set to cuatro venezolano, A D F# B" width="100%"><br>
+<sub>Cuatro</sub>
+<h3>Venezuelan cuatro</h3>
+The re-entrant A D F# B tuning, with the strings in neck order.
+</td>
+</tr>
+</table>
+
 ## Build
 
 Everything builds inside the `android-build:35` Docker image; nothing is installed on the host.
@@ -55,6 +86,7 @@ won't install over the old app. Without it the build falls back to Android's def
 
 ## How it works
 
+- `Instrument` and `Tuning` hold the instruments and their tunings (add one there to support another)
 - `PitchEngine` records from the mic and finds the pitch with the YIN algorithm
 - `TunerView` and `StringsView` draw the gauge and the string buttons
 - `Chord` holds chord shapes and the "what comes next" moves, `ChordWheelView` and `ChordDiagramView`
