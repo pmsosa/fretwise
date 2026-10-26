@@ -16,7 +16,7 @@ follow it.
 |---|---|
 | Guitarlele | A guitar tuning plus a capo. Standard, Drop D, Half step down, DADGAD, Open G. Capo 3 is the default (G C F Bb D G); capo 5 gives A D G C E A; capo 6 gives Bb Eb Ab Db F Bb |
 | Ukulele | Standard GCEA, Low G, Baritone DGBE, D tuning (ADF#B) |
-| Cuatro venezolano | A D F# B, re-entrant (B3 F#4 D4 A4 from the lowest string) |
+| Cuatro venezolano | A D F# B: strings 1 to 4 are A3 D4 F#4 B3, so by pitch it climbs A3 B3 D4 F#4 |
 
 A guitarlele is a guitar tuned up with a capo, so it works as one: pick the guitar tuning, then the fret.
 

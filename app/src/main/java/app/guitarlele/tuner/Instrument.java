@@ -29,8 +29,8 @@ final class Instrument {
             new Tuning("Low G",          55, 60, 64, 69),
             new Tuning("Baritone DGBE",  50, 55, 59, 64),
             new Tuning("D tuning ADF#B", true, 69, 62, 66, 71)),
-        // re-entrant: B3 is the lowest string, then F#4, D4 and A4
+        // strings 1-4 are A3 D4 F#4 B3; listed in neck order (4th to 1st) that is B3 F#4 D4 A3
         new Instrument("Cuatro", "Cuatro venezolano tuning", 0,
-            new Tuning("Standard (A D F# B)", true, 59, 66, 62, 69)),
+            new Tuning("Standard (A D F# B)", true, 59, 66, 62, 57)),
     };
 }
