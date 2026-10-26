@@ -14,7 +14,7 @@ final class ChordDiagramView extends View {
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
     private final float dp = getResources().getDisplayMetrics().density;
-    private int[] frets = new int[]{-1, -1, -1, -1, -1, -1};
+    private int[] frets = new int[]{-1, -1, -1, -1};
 
     ChordDiagramView(Context c) {
         super(c);
@@ -22,15 +22,16 @@ final class ChordDiagramView extends View {
         p.setTextAlign(Paint.Align.CENTER);
     }
 
-    void setChord(Chord chord) {
-        frets = chord.frets();
+    void setChord(Chord chord, int[] open) {
+        frets = chord.frets(open);
         invalidate();
     }
 
     @Override protected void onDraw(Canvas cv) {
         float w = getWidth(), h = getHeight();
         float left = 34 * dp, right = w - 14 * dp, top = 30 * dp, bottom = h - 8 * dp;
-        float sx = (right - left) / 5f, fy = (bottom - top) / ROWS;
+        int n = frets.length;
+        float sx = (right - left) / (n - 1f), fy = (bottom - top) / ROWS;
 
         int minPos = Integer.MAX_VALUE, max = 0;
         for (int f : frets) if (f > 0) { minPos = Math.min(minPos, f); max = Math.max(max, f); }
@@ -48,13 +49,16 @@ final class ChordDiagramView extends View {
         // strings
         p.setStrokeWidth(1.5f * dp);
         p.setColor(Palette.alpha(Palette.TEXT, 0.6f));
-        for (int s = 0; s < 6; s++) cv.drawLine(left + s * sx, top, left + s * sx, bottom, p);
+        for (int s = 0; s < n; s++) cv.drawLine(left + s * sx, top, left + s * sx, bottom, p);
 
         // barre
         if (minPos != Integer.MAX_VALUE) {
             int first = -1, last = -1, count = 0;
-            for (int s = 0; s < 6; s++) if (frets[s] == minPos) { if (first < 0) first = s; last = s; count++; }
-            if (count >= 2) {
+            for (int s = 0; s < n; s++) if (frets[s] == minPos) { if (first < 0) first = s; last = s; count++; }
+            boolean openInside = false;
+            for (int s = first; s <= last && first >= 0; s++) if (frets[s] <= 0) openInside = true;
+            // a lone pair of fingers (like a ukulele G) is drawn as dots, not a bar
+            if ((count >= 3 || last - first >= 3) && !openInside) {
                 float y = top + (minPos - start + 0.5f) * fy;
                 rect.set(left + first * sx - 9 * dp, y - 9 * dp, left + last * sx + 9 * dp, y + 9 * dp);
                 p.setStyle(Paint.Style.FILL);
@@ -64,7 +68,7 @@ final class ChordDiagramView extends View {
         }
 
         // dots, open rings and muted crosses
-        for (int s = 0; s < 6; s++) {
+        for (int s = 0; s < n; s++) {
             float x = left + s * sx;
             int f = frets[s];
             if (f > 0) {

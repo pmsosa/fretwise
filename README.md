@@ -1,37 +1,36 @@
-![Guitarlele Tuner](docs/banner.jpg)
+![Fretwise](docs/banner.jpg)
 
-An Android app for guitarlele players. It tunes your instrument by ear through the microphone, and it
-has a chord wheel that suggests where to go next, plays each chord and shows how to finger it.
-
-A guitarlele is a guitar tuned up with a capo, so the tuner works that way: pick a guitar tuning, then
-pick the capo fret (0–7). Capo 3 is the default; the common "classic" guitarlele tuning is capo 5.
-It also tunes a ukulele and a Venezuelan cuatro.
-
-## Tuner
+Fretwise is an Android tuner and chord finder for small string instruments: the guitarlele, the ukulele
+and the Venezuelan cuatro. Pick your instrument once at the top and the tuner and the chord wheel both
+follow it.
 
 - Listens through the mic, finds which string you played and shows how many cents sharp or flat it is
-- A gauge with a smooth needle that glows green when you're in tune (within 5 cents)
+- A swinging needle gauge that glows green when you're in tune (within 5 cents)
 - Auto-detects the string, or tap a string to lock onto it
-- Instruments: Guitarlele, Ukulele, Cuatro venezolano. Each remembers its own tuning and capo
-- Guitarlele: base tunings Standard, Drop D, Half step down, DADGAD, Open G, plus a capo (0–7)
-- Ukulele: Standard GCEA, Low G, Baritone DGBE, D tuning (ADF#B)
-- Cuatro venezolano: A D F# B, re-entrant (B3 F#4 D4 A4 from the lowest string)
+- Capo 0–7 on any instrument; each instrument remembers its own tuning and capo
+- A chord wheel: start on any chord, see where it usually goes next, hear each chord and see the fingering
 
-| Base tuning + capo | Strings |
+## Instruments
+
+| Instrument | Tunings |
 |---|---|
-| Standard, capo 3 (default) | G C F Bb D G |
-| Standard, capo 5 | A D G C E A |
-| Standard, capo 6 | Bb Eb Ab Db F Bb |
+| Guitarlele | A guitar tuning plus a capo. Standard, Drop D, Half step down, DADGAD, Open G. Capo 3 is the default (G C F Bb D G); capo 5 gives A D G C E A; capo 6 gives Bb Eb Ab Db F Bb |
+| Ukulele | Standard GCEA, Low G, Baritone DGBE, D tuning (ADF#B) |
+| Cuatro venezolano | A D F# B, re-entrant (B3 F#4 D4 A4 from the lowest string) |
+
+A guitarlele is a guitar tuned up with a capo, so it works as one: pick the guitar tuning, then the fret.
 
 ## Chord wheel
 
 - Choose a start chord (any root, major or minor)
 - The chord sits in the middle of a wheel; six chords that commonly follow it sit around it, coloured by
   role (home, away, tension)
-- Tap one to move there. It strums the chord and shows the guitar fingering (dots, open and muted
-  strings, barres), and a trail of the path you took lets you step back
-- Chord names are the guitar shapes you play; with a capo the sound is shifted and the app tells you what
-  it sounds as (a G shape at capo 3 sounds as Bb)
+- Tap one to move there. It strums the chord and shows the fingering (dots, open and muted strings,
+  barres), and a trail of the path you took lets you step back
+- Guitarlele chords use the usual guitar shapes. Ukulele and cuatro shapes are worked out from the strings'
+  tuning (the easiest fingering that sounds the chord's three notes), so they follow Low G, baritone and so on
+- With a capo the chord is the shape you play and the app tells you what it sounds as (a G shape at capo 3
+  sounds as Bb)
 - Major and minor chords only for now
 
 ## See it
@@ -41,30 +40,44 @@ Real screenshots from the app running on a phone.
 <table>
 <tr>
 <td width="50%" valign="top">
-<img src="docs/images/guitarlele-tuner-guitarlele.png" alt="Tuner tab set to guitarlele, standard tuning with capo 3" width="100%"><br>
-<sub>Tuner</sub>
+<img src="docs/images/fretwise-tuner-guitarlele.png" alt="Tuner for a guitarlele, standard tuning with capo 3" width="100%"><br>
+<sub>Tuner · Guitarlele</sub>
 <h3>Tune it with a capo</h3>
 Pick a guitar tuning and a capo fret. Capo 3 gives G C F Bb D G.
 </td>
 <td width="50%" valign="top">
-<img src="docs/images/guitarlele-chords.png" alt="Chord wheel centred on Bm with the path G, D, Bm and the fingering below" width="100%"><br>
-<sub>Chords</sub>
+<img src="docs/images/fretwise-chords-guitarlele.png" alt="Chord wheel on Bm for the guitarlele, with the path G, D, Bm and the fingering below" width="100%"><br>
+<sub>Chords · Guitarlele</sub>
 <h3>Follow the wheel</h3>
 Tap where a chord could go next. It plays the chord and shows how to finger it.
 </td>
 </tr>
 <tr>
 <td width="50%" valign="top">
-<img src="docs/images/guitarlele-tuner-ukulele.png" alt="Tuner tab set to ukulele, standard GCEA" width="100%"><br>
-<sub>Ukulele</sub>
-<h3>Other instruments too</h3>
-Standard, low G, baritone and D tunings for the ukulele.
+<img src="docs/images/fretwise-tuner-ukulele.png" alt="Tuner for a ukulele, standard GCEA" width="100%"><br>
+<sub>Tuner · Ukulele</sub>
+<h3>Ukulele tunings</h3>
+Standard, low G, baritone and D tunings.
 </td>
 <td width="50%" valign="top">
-<img src="docs/images/guitarlele-tuner-cuatro.png" alt="Tuner tab set to cuatro venezolano, A D F# B" width="100%"><br>
-<sub>Cuatro</sub>
+<img src="docs/images/fretwise-chords-ukulele.png" alt="Chord wheel for the ukulele showing a Bm chord box" width="100%"><br>
+<sub>Chords · Ukulele</sub>
+<h3>Ukulele chords</h3>
+The same wheel, with fingerings worked out for the four strings.
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/images/fretwise-tuner-cuatro.png" alt="Tuner for a Venezuelan cuatro, A D F# B" width="100%"><br>
+<sub>Tuner · Cuatro</sub>
 <h3>Venezuelan cuatro</h3>
 The re-entrant A D F# B tuning, with the strings in neck order.
+</td>
+<td width="50%" valign="top">
+<img src="docs/images/fretwise-chords-cuatro.png" alt="Chord wheel for the cuatro on F# with its chord box" width="100%"><br>
+<sub>Chords · Cuatro</sub>
+<h3>Cuatro chords</h3>
+Chord shapes fitted to the cuatro's tuning.
 </td>
 </tr>
 </table>
@@ -83,6 +96,9 @@ The APK lands in `app/build/outputs/apk/release/app-release.apk`. Requires Andro
 Builds are signed with a fixed key from `signing/guitarlele.jks`, configured by
 `signing/keystore.properties`. The folder is not in git, so keep it safe: a different key means an update
 won't install over the old app. Without it the build falls back to Android's default debug signing.
+
+The app was first called Guitarlele Tuner, so the package is still `app.guitarlele.tuner`. Changing it
+would make Android treat the app as a new one and lose the saved settings.
 
 ## How it works
 

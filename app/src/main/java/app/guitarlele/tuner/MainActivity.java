@@ -23,7 +23,7 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
 
     private SharedPreferences prefs;
     private UiKit ui;
-    private int instrument, tuningIndex, capo, guitarCapo, tab;
+    private int instrument, tuningIndex, capo, tab;
     private int[] strings;
     private int locked = -1;
 
@@ -36,7 +36,7 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
     private TextView tuningChip, notesLine, lockHint;
     private final TextView[] tabChips = new TextView[2];
     private final TextView[] instrumentChips = new TextView[Instrument.ALL.length];
-    private TextView[] tunerCapoChips, chordsCapoChips;
+    private final java.util.List<TextView[]> capoRows = new java.util.ArrayList<>();
 
     private long lastVoiced;
     private int lastTarget = -1;
@@ -48,8 +48,6 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
         ui = new UiKit(this);
         prefs = getSharedPreferences("tuner", MODE_PRIVATE);
         instrument = Math.min(prefs.getInt("instrument", 0), Instrument.ALL.length - 1);
-        // guitar with capo 3 = the user's guitarlele; the chord wheel always follows this one
-        guitarCapo = prefs.getInt("capo_0", prefs.getInt("capo", Instrument.ALL[0].defaultCapo));
         loadInstrumentState();
         tab = prefs.getInt("tab", 0);
 
@@ -73,9 +71,23 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
             return WindowInsets.CONSUMED;
         });
 
-        TextView title = ui.text("Guitarlele", 26, Palette.TEXT, true);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, ui.lp(-1, -2, 0));
+        TextView brand = ui.text("FRETWISE", 13, Palette.DIM, true);
+        brand.setLetterSpacing(0.3f);
+        brand.setGravity(Gravity.CENTER);
+        root.addView(brand, ui.lp(-1, -2, 0, 4, 0));
+
+        // the instrument you pick here is what both the tuner and the chords use
+        LinearLayout instruments = new LinearLayout(this);
+        for (int i = 0; i < instrumentChips.length; i++) {
+            final int idx = i;
+            instrumentChips[i] = ui.chip(Instrument.ALL[i].name, false);
+            instrumentChips[i].setTextSize(17);
+            instrumentChips[i].setOnClickListener(v -> selectInstrument(idx));
+            LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(0, ui.px(46), 1);
+            l.setMargins(ui.px(4), 0, ui.px(4), 0);
+            instruments.addView(instrumentChips[i], l);
+        }
+        root.addView(instruments, ui.lp(-1, -2, 0, 10, 0));
 
         LinearLayout tabs = new LinearLayout(this);
         String[] names = {"Tuner", "Chords"};
@@ -83,15 +95,16 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
             final int t = i;
             tabChips[i] = ui.chip(names[i], false);
             tabChips[i].setOnClickListener(v -> showTab(t));
-            LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(0, ui.px(42), 1);
+            tabChips[i].setTextSize(15);
+            LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(0, ui.px(38), 1);
             l.setMargins(ui.px(4), 0, ui.px(4), 0);
             tabs.addView(tabChips[i], l);
         }
-        root.addView(tabs, ui.lp(-1, -2, 0, 12, 0));
+        root.addView(tabs, ui.lp(-1, -2, 0, 10, 0));
 
         FrameLayout content = new FrameLayout(this);
         tunerPage = buildTunerPage();
-        chordsPanel = new ChordsPanel(this, ui, synth, capoRow(true), guitarCapo);
+        chordsPanel = new ChordsPanel(this, ui, synth, capoRow());
         content.addView(tunerPage, new FrameLayout.LayoutParams(-1, -1));
         content.addView(chordsPanel, new FrameLayout.LayoutParams(-1, -1));
         root.addView(content, ui.lp(-1, 0, 1, 4, 0));
@@ -102,18 +115,6 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
     private LinearLayout buildTunerPage() {
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-
-        LinearLayout instruments = new LinearLayout(this);
-        for (int i = 0; i < instrumentChips.length; i++) {
-            final int idx = i;
-            instrumentChips[i] = ui.chip(Instrument.ALL[i].name, false);
-            instrumentChips[i].setTextSize(14);
-            instrumentChips[i].setOnClickListener(v -> selectInstrument(idx));
-            LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(0, ui.px(36), 1);
-            l.setMargins(ui.px(4), 0, ui.px(4), 0);
-            instruments.addView(instrumentChips[i], l);
-        }
-        page.addView(instruments, ui.lp(-1, -2, 0, 8, 0));
 
         notesLine = ui.text("", 15, Palette.AMBER, false);
         notesLine.setGravity(Gravity.CENTER);
@@ -127,7 +128,7 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
         chipLp.gravity = Gravity.CENTER_HORIZONTAL;
         page.addView(tuningChip, chipLp);
 
-        page.addView(capoRow(false), ui.lp(-1, -2, 0, 4, 0));
+        page.addView(capoRow(), ui.lp(-1, -2, 0, 4, 0));
 
         tunerView = new TunerView(this);
         page.addView(tunerView, ui.lp(-1, 0, 1, 8, 0));
@@ -147,8 +148,8 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
         return page;
     }
 
-    /** "CAPO 0 1 2 …" chips. The tuner's row follows the instrument; the chord screen's row is the guitar's. */
-    private View capoRow(boolean forChords) {
+    /** "CAPO 0 1 2 …" chips. The tuner and chord screens each have a row; both set the instrument's capo. */
+    private View capoRow() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         TextView label = ui.text("CAPO", 12, Palette.DIM, true);
@@ -161,27 +162,22 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
         for (int i = 0; i < chips.length; i++) {
             final int c = i;
             chips[i] = ui.chip(String.valueOf(i), false);
-            chips[i].setOnClickListener(v -> setCapo(c, forChords));
+            chips[i].setOnClickListener(v -> { capo = c; applyTuning(); });
             LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(0, ui.px(40), 1);
             l.setMargins(ui.px(3), 0, ui.px(3), 0);
             row.addView(chips[i], l);
         }
         box.addView(row, ui.lp(-1, -2, 0, 6, 0));
-        if (forChords) chordsCapoChips = chips; else tunerCapoChips = chips;
+        capoRows.add(chips);
         return box;
-    }
-
-    private void setCapo(int c, boolean forChords) {
-        if (forChords) guitarCapo = c; else capo = c;
-        if (instrument == Instrument.GUITARLELE) { guitarCapo = c; capo = c; }
-        applyTuning();
     }
 
     private void loadInstrumentState() {
         Instrument ins = Instrument.ALL[instrument];
         tuningIndex = Math.min(prefs.getInt("tuning_" + instrument,
                 instrument == Instrument.GUITARLELE ? prefs.getInt("tuning", 0) : 0), ins.tunings.length - 1);
-        capo = instrument == Instrument.GUITARLELE ? guitarCapo : prefs.getInt("capo_" + instrument, ins.defaultCapo);
+        capo = prefs.getInt("capo_" + instrument,
+                instrument == Instrument.GUITARLELE ? prefs.getInt("capo", ins.defaultCapo) : ins.defaultCapo);
     }
 
     private void selectInstrument(int i) {
@@ -212,8 +208,7 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
         locked = -1;
         lastTarget = -1;
         prefs.edit().putInt("instrument", instrument)
-                .putInt("tuning_" + instrument, tuningIndex).putInt("capo_" + instrument, capo)
-                .putInt("capo_0", guitarCapo).apply();
+                .putInt("tuning_" + instrument, tuningIndex).putInt("capo_" + instrument, capo).apply();
 
         StringBuilder sb = new StringBuilder();
         for (int m : strings) sb.append(sb.length() > 0 ? "  " : "").append(t.noteName(m));
@@ -222,11 +217,12 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
         tuningChip.setText(several ? t.name + "  ▾" : t.name);
         tuningChip.setClickable(several);
         for (int i = 0; i < instrumentChips.length; i++) ui.styleChip(instrumentChips[i], i == instrument);
-        for (int i = 0; i < tunerCapoChips.length; i++) ui.styleChip(tunerCapoChips[i], i == capo);
-        for (int i = 0; i < chordsCapoChips.length; i++) ui.styleChip(chordsCapoChips[i], i == guitarCapo);
+        for (TextView[] chips : capoRows)
+            for (int i = 0; i < chips.length; i++) ui.styleChip(chips[i], i == capo);
         stringsView.setStrings(strings, t.sharps);
         tunerView.setIdle();
-        chordsPanel.setCapo(guitarCapo);
+        // guitar chord shapes assume standard tuning; the small instruments use whatever tuning is picked
+        chordsPanel.setTuning(instrument == Instrument.GUITARLELE ? Chord.STANDARD : t.midi, capo);
         updateLockHint();
     }
 
@@ -319,7 +315,7 @@ public class MainActivity extends Activity implements PitchEngine.Listener {
         if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
             if (tab == 0) engine.start();
         } else {
-            lockHint.setText("Microphone permission is needed to hear your guitarlele");
+            lockHint.setText("Microphone permission is needed to hear your instrument");
         }
     }
 }

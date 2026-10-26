@@ -4,7 +4,7 @@
     <uses-feature android:name="android.hardware.microphone" android:required="true" />
 
     <application
-        android:label="Guitarlele Tuner"
+        android:label="Fretwise"
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme"
         android:allowBackup="true">

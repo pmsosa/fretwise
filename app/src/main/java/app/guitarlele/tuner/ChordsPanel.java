@@ -24,13 +24,13 @@ final class ChordsPanel extends LinearLayout {
 
     private final List<Chord> path = new ArrayList<>();
     private boolean startMinor;
+    private int[] open = Chord.STANDARD;
     private int capo;
 
-    ChordsPanel(Context ctx, UiKit ui, ToneSynth synth, View capoRow, int capo) {
+    ChordsPanel(Context ctx, UiKit ui, ToneSynth synth, View capoRow) {
         super(ctx);
         this.ui = ui;
         this.synth = synth;
-        this.capo = capo;
         setOrientation(VERTICAL);
 
         addView(capoRow, ui.lp(-1, -2, 0, 4, 0));
@@ -102,9 +102,11 @@ final class ChordsPanel extends LinearLayout {
         startOn(new Chord(7, false)); // G, a friendly place to begin
     }
 
-    void setCapo(int capo) {
+    /** open: open-string MIDI notes in neck order, before the capo. */
+    void setTuning(int[] open, int capo) {
+        this.open = open;
         this.capo = capo;
-        refreshInfo();
+        if (!path.isEmpty()) refreshInfo();
     }
 
     void stopSound() { synth.release(); }
@@ -137,12 +139,12 @@ final class ChordsPanel extends LinearLayout {
 
     private Chord current() { return path.get(path.size() - 1); }
 
-    private void sound() { synth.strum(current().midiNotes(capo)); }
+    private void sound() { synth.strum(current().midiNotes(open, capo)); }
 
     private void refreshInfo() {
         Chord c = current();
-        diagram.setChord(c);
-        shapeText.setText(c.shapeText());
+        diagram.setChord(c, open);
+        shapeText.setText(c.shapeText(open));
         soundsText.setText(capo == 0 ? c.name() + " chord"
                 : c.name() + " shape  ·  capo " + capo + "\nsounds as " + c.soundsAs(capo));
     }
